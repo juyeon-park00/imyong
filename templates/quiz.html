@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>총론 암기 퀴즈</title></head>
+<body>
+  <h2>문제 (출제 파트: {{ tag }})</h2>
+  <p>{{ question }}</p>
+  <form method="post">
+    <input type="hidden" name="qid" value="{{ qid }}">
+    <input type="text" name="answer" placeholder="정답 입력" required>
+    <button type="submit">정답 확인</button>
+  </form>
+  <p>힌트 보기: <em>{{ hint }}</em></p>
+  <p><a href="/wrong">오답노트 보기</a></p>
+</body>
+</html>

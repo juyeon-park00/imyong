@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>오답노트</title></head>
+<body>
+  <h2>오답노트 📘</h2>
+  <ul>
+    {% for q in questions %}
+      <li>{{ q.question }}<br><strong>정답:</strong> {{ q.answer }}</li>
+    {% endfor %}
+  </ul>
+  <a href="/">처음으로 돌아가기</a>
+</body>
+</html>

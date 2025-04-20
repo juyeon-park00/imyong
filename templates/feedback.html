@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>피드백</title></head>
+<body>
+  <h2>{{ feedback }}</h2>
+  {% if next_qid != -1 %}
+    <a href="/">다음 문제 풀기</a>
+  {% else %}
+    <p>퀴즈 완료! 🎉</p>
+    <a href="/wrong">오답노트 보기</a>
+  {% endif %}
+</body>
+</html>
