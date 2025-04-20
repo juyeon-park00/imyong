@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, session, redirect, url_for
 import random
 
@@ -49,4 +48,5 @@ def wrong():
     return render_template("wrong.html", questions=wrong_questions)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
+
