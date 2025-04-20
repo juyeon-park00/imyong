@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import json
 import os
 
 app = Flask(__name__)
-app.secret_key = 'nuri_secret_key'
 
 # 외부 JSON 파일에서 문제 불러오기
 def load_quiz_data():
@@ -14,47 +13,26 @@ def load_quiz_data():
 
 quiz_data = load_quiz_data()
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if "score" not in session:
-        session["score"] = 0
-        session["wrong"] = []
-        session["qid"] = 0
-        session["mode"] = "normal"
+@app.route("/")
+def home():
+    return redirect(url_for("quiz", qid=0))
 
-    if request.method == "POST":
-        user_answer = request.form["answer"].strip()
-        qid = int(request.form["qid"])
-        correct = quiz_data[qid]["answer"]
-
-        if user_answer == correct:
-            session["score"] += 1
-            feedback = "✅ 정답입니다!"
-        else:
-            feedback = f"❌ 오답입니다. 정답: {correct}"
-            if qid not in session["wrong"]:
-                session["wrong"].append(qid)
-
-        if session.get("mode", "normal") == "normal":
-            session["qid"] = qid + 1
-        else:
-            if "wrong_qids" in session and session["wrong_qids"]:
-                session["wrong_qids"].pop(0)
-                if session["wrong_qids"]:
-                    session["qid"] = session["wrong_qids"][0]
-                else:
-                    session["mode"] = "normal"
-                    session["qid"] = 0
-
-        return render_template("feedback.html", feedback=feedback, next_qid=session["qid"] if session["qid"] < len(quiz_data) else -1)
-
-    qid = session.get("qid", 0)
+@app.route("/quiz/<int:qid>", methods=["GET", "POST"])
+def quiz(qid):
     if qid >= len(quiz_data):
         return render_template("done.html")
 
+    if request.method == "POST":
+        user_answer = request.form["answer"].strip()
+        correct = quiz_data[qid]["answer"]
+
+        is_correct = user_answer == correct
+        feedback = "✅ 정답입니다!" if is_correct else f"❌ 오답입니다. 정답: {correct}"
+
+        return render_template("feedback.html", feedback=feedback, next_qid=qid + 1 if qid + 1 < len(quiz_data) else -1)
+
     question = quiz_data[qid]["question"]
     tag = quiz_data[qid].get("tag", "기타")
-
     return render_template("quiz.html", qid=qid, question=question, tag=tag)
 
 @app.route("/hint/<int:qid>")
@@ -63,22 +41,11 @@ def hint(qid):
     hint = ", ".join([w[0] + "__" for w in answer.split(", ")])
     return jsonify({"hint": hint})
 
-@app.route("/wrong")
-def wrong():
-    wrong_ids = session.get("wrong", [])
-    if not wrong_ids:
-        return render_template("wrong.html", questions=[])
-
-    session["mode"] = "wrong"
-    session["wrong_qids"] = list(wrong_ids)
-    session["qid"] = session["wrong_qids"][0]
-    return redirect(url_for("index"))
-
 @app.route("/wrong-note")
 def wrong_note():
-    wrong_ids = session.get("wrong", [])
-    wrong_questions = [quiz_data[qid] for qid in wrong_ids if qid < len(quiz_data)]
-    return render_template("wrong.html", questions=wrong_questions)
+    # 오답 노트 페이지는 단순 조회용만 유지
+    return render_template("wrong.html", questions=[])
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
