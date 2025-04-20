@@ -29,7 +29,7 @@ def quiz(qid):
         is_correct = user_answer == correct
         feedback = "✅ 정답입니다!" if is_correct else f"❌ 오답입니다. 정답: {correct}"
 
-        return render_template("feedback.html", feedback=feedback, next_qid=qid + 1 if qid + 1 < len(quiz_data) else -1)
+        return redirect(url_for("quiz", qid=qid + 1))
 
     question = quiz_data[qid]["question"]
     tag = quiz_data[qid].get("tag", "기타")
@@ -48,4 +48,5 @@ def wrong_note():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
