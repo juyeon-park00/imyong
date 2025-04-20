@@ -1,5 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for
-import random
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import json
 import os
 
@@ -20,6 +19,8 @@ def index():
     if "score" not in session:
         session["score"] = 0
         session["wrong"] = []
+        session["qid"] = 0
+        session["mode"] = "normal"
 
     if request.method == "POST":
         user_answer = request.form["answer"].strip()
@@ -34,11 +35,25 @@ def index():
             if qid not in session["wrong"]:
                 session["wrong"].append(qid)
 
-        return render_template("feedback.html", feedback=feedback, next_qid=qid + 1 if qid + 1 < len(quiz_data) else -1)
+        if session.get("mode", "normal") == "normal":
+            session["qid"] = qid + 1
+        else:
+            if "wrong_qids" in session and session["wrong_qids"]:
+                session["wrong_qids"].pop(0)
+                if session["wrong_qids"]:
+                    session["qid"] = session["wrong_qids"][0]
+                else:
+                    session["mode"] = "normal"
+                    session["qid"] = 0
 
-    qid = random.randint(0, len(quiz_data) - 1)
+        return render_template("feedback.html", feedback=feedback, next_qid=session["qid"] if session["qid"] < len(quiz_data) else -1)
+
+    qid = session.get("qid", 0)
+    if qid >= len(quiz_data):
+        return render_template("done.html")
+
     question = quiz_data[qid]["question"]
-    tag = quiz_data[qid]["tag"]
+    tag = quiz_data[qid].get("tag", "기타")
 
     return render_template("quiz.html", qid=qid, question=question, tag=tag)
 
@@ -46,15 +61,24 @@ def index():
 def hint(qid):
     answer = quiz_data[qid]["answer"]
     hint = ", ".join([w[0] + "__" for w in answer.split(", ")])
-    return {"hint": hint}
+    return jsonify({"hint": hint})
 
 @app.route("/wrong")
 def wrong():
+    wrong_ids = session.get("wrong", [])
+    if not wrong_ids:
+        return render_template("wrong.html", questions=[])
+
+    session["mode"] = "wrong"
+    session["wrong_qids"] = list(wrong_ids)
+    session["qid"] = session["wrong_qids"][0]
+    return redirect(url_for("index"))
+
+@app.route("/wrong-note")
+def wrong_note():
     wrong_ids = session.get("wrong", [])
     wrong_questions = [quiz_data[qid] for qid in wrong_ids if qid < len(quiz_data)]
     return render_template("wrong.html", questions=wrong_questions)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-
